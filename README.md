@@ -29,3 +29,5 @@ Requirements to run:
     Some time to deal with errors
     
 In particular, the second-to-last point is a problem with the Euler cluster, because by default your programs aren't allowed to access the internet outside of the ETH intranet. Somewhere on the Euler website there's a simple command that activates a proxy (whatever that means, but it makes the internet work I guess). Also, make sure to figure out how to enable Python 3.9+ and to update PyTorch to the appropriate version. I noticed that with the default version the program sometimes crashes because they recently something about the loss function. No idea how to update that stuff, I somehow just barely got it to run. If you need any help I may be able to help you, but don't count on it. I have no idea what I'm doing.
+
+You can inspect the training progress either in your console or via tensorboard. The logs should be written into a folder called "runs" (maybe you'll have to make that yourself before running so it doesn't crash, idk). I'll let you figure out how to do that on your own :)
