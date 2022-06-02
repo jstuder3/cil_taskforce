@@ -10,7 +10,7 @@ binary_classification_baseline.py is the baseline which we will use as a compari
 
 main.py contains the contrastive learning version which was (mostly) inspired by "MoCoV1" ([link](https://openaccess.thecvf.com/content_CVPR_2020/papers/He_Momentum_Contrast_for_Unsupervised_Visual_Representation_Learning_CVPR_2020_paper.pdf)) and DyHardCode ([link](https://openreview.net/pdf?id=eiAkrltBTh4)). For a soft introduction to contrastive learning and momentum encoders, you could skim through the first 2-3 chapters of my bachelor's thesis [here](https://pub.tik.ee.ethz.ch/students/2021-HS/BA-2021-25.pdf), where I used a similar framework, but with a "Natural Language to Programming Language" problem. 
 
-As a TLDR: The contrastive loss objective essentially tries to make the encodings of corresponding elements "as close as possible" in some sense. For our problem, the goal is that in the end there will be two clusters in the latent space, one corresponding to positive-sentiment texts and one to negative-sentiment texts.
+As a TLDR: The contrastive loss objective essentially tries to make the encodings of corresponding elements "as close as possible" in some sense. It pulls together corresponding pairs and pushes apart stuff stuff that does not belong to each other. For our problem, the goal is that in the end there will be two clusters in the latent space, one corresponding to positive-sentiment texts and one to negative-sentiment texts.
 
 ### Q: How the fuck do I run the code?
 
