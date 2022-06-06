@@ -27,11 +27,11 @@ num_epochs = 3
 temperature = 0.07
 learning_rate = 1e-5
 train_size=0.7
-train_batch_size=8
+train_batch_size=1
 val_batch_size=16
 max_queue_size=0 #putting this to zero disables the momentum encoder queue
 momentum_update_weight=0.99
-max_collection_size = 1024 # putting this and num_hard_..._per_sample to zero disables hard negatives
+max_collection_size = 2 # putting this and num_hard_..._per_sample to zero disables hard negatives
 num_hard_negatives_per_sample=1
 num_hard_positives_per_sample=1
 debug_subsampling = 0.01
@@ -289,32 +289,39 @@ for epoch in range(num_epochs):
 
                 #append the positive sentiment samples to the positive sentimenet collection
                 if positive_sentiment_collection.shape[0] < max_collection_size: #if the collection isn't already full, just append the new embeddings to the end of it
-                    positive_sentiment_collection = torch.vstack((positive_sentiment_collection, positive_sentiment_momentum_embeddings))
-                    positive_sentiment_collection_inputs["input_ids"] = torch.vstack((positive_sentiment_collection_inputs["input_ids"], positive_sentiment_inputs["input_ids"]))
-                    positive_sentiment_collection_inputs["attention_mask"] = torch.vstack((positive_sentiment_collection_inputs["attention_mask"], positive_sentiment_inputs["attention_mask"]))
-                    current_positive_sentiment_collection_index += num_positive_sentiment_samples #note: we might slightly "overshoot" the max collection size, but this isn't much of an issue
+
+                    remaining_length = max_collection_size - positive_sentiment_collection.shape[0]
+
+                    positive_sentiment_collection = torch.vstack((positive_sentiment_collection, positive_sentiment_momentum_embeddings[:remaining_length]))
+                    positive_sentiment_collection_inputs["input_ids"] = torch.vstack((positive_sentiment_collection_inputs["input_ids"], positive_sentiment_inputs["input_ids"][:remaining_length]))
+                    positive_sentiment_collection_inputs["attention_mask"] = torch.vstack((positive_sentiment_collection_inputs["attention_mask"], positive_sentiment_inputs["attention_mask"][:remaining_length]))
+                    current_positive_sentiment_collection_index += min(num_positive_sentiment_samples, remaining_length) #make sure not to "overshoot" the max collection size
                 else:
                     if current_positive_sentiment_collection_index >= max_collection_size:
                         current_positive_sentiment_collection_index = 0
 
                     start_index = current_positive_sentiment_collection_index
+
                     end_index = min(start_index + num_positive_sentiment_samples, max_collection_size)
 
-                    positive_sentiment_collection[start_index:end_index] = positive_sentiment_momentum_embeddings[:(start_index-end_index)] #need to cut off any excess samples
+                    positive_sentiment_collection[start_index:end_index] = positive_sentiment_momentum_embeddings[:(end_index-start_index)] #need to cut off any excess samples
 
-                    positive_sentiment_collection_inputs["input_ids"][start_index:end_index] = positive_sentiment_inputs["input_ids"]
-                    positive_sentiment_collection_inputs["attention_mask"][start_index:end_index] = positive_sentiment_inputs["attention_mask"]
+                    positive_sentiment_collection_inputs["input_ids"][start_index:end_index] = positive_sentiment_inputs["input_ids"][:(end_index-start_index)]
+                    positive_sentiment_collection_inputs["attention_mask"][start_index:end_index] = positive_sentiment_inputs["attention_mask"][:(end_index-start_index)]
 
-                    current_positive_sentiment_collection_index += num_positive_sentiment_samples
+                    current_positive_sentiment_collection_index += (end_index-start_index) #num_positive_sentiment_samples
 
                 #do the same for the negative sentiment samples
                 if negative_sentiment_collection.shape[0] < max_collection_size:
-                    negative_sentiment_collection = torch.vstack((negative_sentiment_collection, negative_sentiment_momentum_embeddings))
 
-                    negative_sentiment_collection_inputs["input_ids"] = torch.vstack((negative_sentiment_collection_inputs["input_ids"], negative_sentiment_inputs["input_ids"]))
-                    negative_sentiment_collection_inputs["attention_mask"] = torch.vstack((negative_sentiment_collection_inputs["attention_mask"], negative_sentiment_inputs["attention_mask"]))
+                    remaining_length = max_collection_size - negative_sentiment_collection.shape[0]
 
-                    current_negative_sentiment_collection_index += num_negative_sentiment_samples
+                    negative_sentiment_collection = torch.vstack((negative_sentiment_collection, negative_sentiment_momentum_embeddings[:remaining_length]))
+
+                    negative_sentiment_collection_inputs["input_ids"] = torch.vstack((negative_sentiment_collection_inputs["input_ids"], negative_sentiment_inputs["input_ids"][:remaining_length]))
+                    negative_sentiment_collection_inputs["attention_mask"] = torch.vstack((negative_sentiment_collection_inputs["attention_mask"], negative_sentiment_inputs["attention_mask"][:remaining_length]))
+
+                    current_negative_sentiment_collection_index += min(num_negative_sentiment_samples, remaining_length)
                 else:
                     if current_negative_sentiment_collection_index >= max_collection_size:
                         current_negative_sentiment_collection_index = 0
@@ -322,12 +329,12 @@ for epoch in range(num_epochs):
                     start_index = current_negative_sentiment_collection_index
                     end_index = min(start_index + num_negative_sentiment_samples, max_collection_size)
 
-                    negative_sentiment_collection[start_index:end_index] = negative_sentiment_momentum_embeddings[:(start_index-end_index)] #need to cut off any excess samples
+                    negative_sentiment_collection[start_index:end_index] = negative_sentiment_momentum_embeddings[:(end_index-start_index)] #need to cut off any excess samples
 
-                    negative_sentiment_collection_inputs["input_ids"][start_index:end_index] = negative_sentiment_inputs["input_ids"]
-                    negative_sentiment_collection_inputs["attention_mask"][start_index:end_index] = negative_sentiment_inputs["attention_mask"]
+                    negative_sentiment_collection_inputs["input_ids"][start_index:end_index] = negative_sentiment_inputs["input_ids"][:(end_index-start_index)]
+                    negative_sentiment_collection_inputs["attention_mask"][start_index:end_index] = negative_sentiment_inputs["attention_mask"][:(end_index-start_index)]
 
-                    current_negative_sentiment_collection_index += num_negative_sentiment_samples
+                    current_negative_sentiment_collection_index += (end_index-start_index)#num_negative_sentiment_samples
 
         ###############
         ### LOGGING ###
