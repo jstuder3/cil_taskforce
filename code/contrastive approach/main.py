@@ -23,18 +23,18 @@ def read_text_data(infile):
 ###################################
 ########Hyperparameters############
 ###################################
-num_epochs = 3
+num_epochs = 5
 temperature = 0.07
 learning_rate = 1e-5
 train_size=0.7
-train_batch_size=1
-val_batch_size=16
-max_queue_size=0 #putting this to zero disables the momentum encoder queue
+train_batch_size=8
+val_batch_size=32
+max_queue_size=1024 #putting this to zero disables the momentum encoder queue
 momentum_update_weight=0.99
-max_collection_size = 2 # putting this and num_hard_..._per_sample to zero disables hard negatives
-num_hard_negatives_per_sample=1
-num_hard_positives_per_sample=1
-debug_subsampling = 0.01
+max_collection_size = 0 # putting this and num_hard_..._per_sample to zero disables hard negatives
+num_hard_negatives_per_sample=0
+num_hard_positives_per_sample=0
+debug_subsampling = 0.2
 ###################################
 ###################################
 ###################################
