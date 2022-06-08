@@ -42,13 +42,14 @@ def read_text_data(infile):
 
 
 ########Hyperparameters############
-num_epochs = 3
+num_epochs = 20
 temperature = 0.07
 learning_rate = 1e-5
 train_size=0.7
-train_batch_size=8
-val_batch_size=16
-debug_subsampling = 0.01
+train_batch_size=64
+val_batch_size=256
+early_stopping_threshold=3
+debug_subsampling = 1
 ##################################
 
 writer = SummaryWriter()
@@ -87,6 +88,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 scaler = torch.cuda.amp.GradScaler() #for fp16
 
 best_val_accuracy = 0
+num_epochs_no_improvement = 0
 
 for epoch in range(num_epochs):
     model.train()
@@ -148,9 +150,15 @@ for epoch in range(num_epochs):
         writer.add_scalar("Baseline_Validation/accuracy", val_accuracy, epoch)
 
         if (val_accuracy > best_val_accuracy):
+            num_epochs_no_improvement = 0
             best_val_accuracy=val_accuracy
             print(f"Found new best model at {best_val_accuracy:3f}% validation accuracy. Saving model...")
             torch.save(model.state_dict(), "best_model_parameters.pt")
+        else:
+            num_epochs_no_improvement += 1
+
+        if num_epochs_no_improvement>=early_stopping_threshold:
+            break
 
 print(f"###### Finished training ######")
 
