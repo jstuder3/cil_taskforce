@@ -23,18 +23,19 @@ def read_text_data(infile):
 ###################################
 ########Hyperparameters############
 ###################################
-num_epochs = 5
+num_epochs = 20
 temperature = 0.07
 learning_rate = 1e-5
 train_size=0.7
-train_batch_size=8
+train_batch_size=16
 val_batch_size=32
-max_queue_size=1024 #putting this to zero disables the momentum encoder queue
-momentum_update_weight=0.99
+max_queue_size=8192 #putting this to zero disables the momentum encoder queue
+momentum_update_weight=0.999
 max_collection_size = 0 # putting this and num_hard_..._per_sample to zero disables hard negatives
 num_hard_negatives_per_sample=0
 num_hard_positives_per_sample=0
-debug_subsampling = 0.2
+early_stopping_threshold=3
+debug_subsampling = 0.01
 ###################################
 ###################################
 ###################################
@@ -96,6 +97,8 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 scaler = torch.cuda.amp.GradScaler() #for fp16
 
 best_val_accuracy = 0
+
+num_epochs_not_improved = 0
 
 #####################
 ### TRAINING LOOP ###
@@ -405,9 +408,16 @@ for epoch in range(num_epochs):
         writer.add_scalar("Validation/accuracy", 100*correct_counter/float(total_counter), epoch)
 
         if (val_accuracy > best_val_accuracy):
+            num_epochs_not_improved = 0
             best_val_accuracy=val_accuracy
             print(f"Found new best model at {best_val_accuracy:3f}% validation accuracy. Saving model...")
             torch.save(model.state_dict(), "best_model_parameters.pt")
+        else:
+            num_epochs_not_improved += 1
+
+        if num_epochs_not_improved>=early_stopping_threshold: #if we have not improved for early_stopping_threshold epochs, stop the training
+            break
+
 
 print(f"###### Finished training ######")
 
