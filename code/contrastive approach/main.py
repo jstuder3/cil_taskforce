@@ -23,19 +23,19 @@ def read_text_data(infile):
 ###################################
 ########Hyperparameters############
 ###################################
-num_epochs = 20
+num_epochs = 1
 temperature = 0.07
 learning_rate = 1e-5
 train_size=0.7
-train_batch_size=16
-val_batch_size=32
+train_batch_size=64
+val_batch_size=256
 max_queue_size=8192 #putting this to zero disables the momentum encoder queue
 momentum_update_weight=0.999
 max_collection_size = 0 # putting this and num_hard_..._per_sample to zero disables hard negatives
 num_hard_negatives_per_sample=0
 num_hard_positives_per_sample=0
 early_stopping_threshold=3
-debug_subsampling = 0.01
+debug_subsampling = 1
 ###################################
 ###################################
 ###################################
@@ -60,12 +60,12 @@ current_queue_index = 0
 
 #set of "negative sentiment" samples (effectively another, larger queue, but with only one type of labels)
 negative_sentiment_collection = torch.empty((0, 768), dtype=torch.float32).to(device)
-negative_sentiment_collection_inputs = {"input_ids": torch.empty((0, 512), dtype=int), "attention_mask": torch.empty((0, 512), dtype=int)}
+negative_sentiment_collection_inputs = {"input_ids": torch.empty((0, 40), dtype=int), "attention_mask": torch.empty((0, 40), dtype=int)}
 current_negative_sentiment_collection_index = 0
 
 #set of "positive sentiment" samples (effectively another, larger queue, but with only one type of labels)
 positive_sentiment_collection = torch.empty((0, 768), dtype=torch.float32).to(device)
-positive_sentiment_collection_inputs = {"input_ids": torch.empty((0, 512), dtype=int), "attention_mask": torch.empty((0, 512), dtype=int)}
+positive_sentiment_collection_inputs = {"input_ids": torch.empty((0, 40), dtype=int), "attention_mask": torch.empty((0, 40), dtype=int)}
 current_positive_sentiment_collection_index = 0
 
 print(f"Running on {device}")
@@ -378,9 +378,9 @@ for epoch in range(num_epochs):
             train_labels = torch.cat((train_labels, labels), dim=0)
 
             if iteration%25==0:
-                print(f"* Forwarding all training samples: iteration {iteration}, progress: {100*iteration/len(train_loader):.2f}%")
+                print(f"* Forwarding all training samples: iteration {iteration}, progress: {100*iteration/len(larger_batch_size_train_loader):.2f}%")
 
-        #second: predict labels based on label of the closest embedding in the training corpus; then compute accuracy using validation labels
+        #second: predict labels based on the average proximity to elements in the training set classes; then compute accuracy using validation labels
         correct_counter = 0
         total_counter = 0
         for iteration, batch in enumerate(val_loader):
@@ -393,11 +393,19 @@ for epoch in range(num_epochs):
 
             embeddings = F.normalize(embeddings, p=2, dim=1)  # normalize
 
-            similiarity_matrix = torch.matmul(embeddings, train_embeddings_matrix.T)
+            similarity_matrix = torch.matmul(embeddings, train_embeddings_matrix.T)
 
-            highest_similarity = torch.argmax(similiarity_matrix, dim=1)
+            #highest_similarity = torch.argmax(similiarity_matrix, dim=1)
 
-            correct_counter += torch.sum(train_labels[highest_similarity]==labels).item()
+            positive_indices = (train_labels == 1)
+            negative_indices = (train_labels == 0)
+
+            average_positive_distance = similarity_matrix[:, positive_indices].mean(dim=1)
+            average_negative_distance = similarity_matrix[:, negative_indices].mean(dim=1)
+
+            predictions = (average_positive_distance > average_negative_distance).int()
+
+            correct_counter += torch.sum(predictions==labels).item()
             total_counter += tokens.shape[0]
             if iteration%25==0:
                 print(f"* Validation iteration {iteration}, progress: {100*iteration/len(val_loader):.2f}%")
@@ -453,7 +461,7 @@ with torch.no_grad():
         if iteration%25==0:
             print(f"* Forwarding all training samples: iteration {iteration}, progress: {100*iteration/len(train_loader)}%")
 
-    #second: predict labels based on label of the closest embedding in the training corpus
+    #second: predict labels based on the average proximity to elements in the training set classes
     test_predictions = torch.empty((0), dtype=int).to(device)
     for iteration, batch in enumerate(test_loader):
         inputs, labels = batch
@@ -464,11 +472,19 @@ with torch.no_grad():
 
         embeddings = F.normalize(embeddings, p=2, dim=1)  # normalize
 
-        similiarity_matrix = torch.matmul(embeddings, train_embeddings_matrix.T)
+        similarity_matrix = torch.matmul(embeddings, train_embeddings_matrix.T)
 
-        highest_similarity = torch.argmax(similiarity_matrix, dim=1)
+        #highest_similarity = torch.argmax(similiarity_matrix, dim=1)
 
-        current_predictions = train_labels[highest_similarity]
+        #current_predictions = train_labels[highest_similarity]
+
+        positive_indices = (train_labels == 1)
+        negative_indices = (train_labels == 0)
+
+        average_positive_distance = similarity_matrix[:, positive_indices].mean(dim=1)
+        average_negative_distance = similarity_matrix[:, negative_indices].mean(dim=1)
+
+        current_predictions = (average_positive_distance > average_negative_distance).int()
 
         test_predictions = torch.cat((test_predictions, current_predictions), dim=0)
 
