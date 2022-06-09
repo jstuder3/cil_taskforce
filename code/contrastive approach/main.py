@@ -94,6 +94,8 @@ val_loader = torch.utils.data.DataLoader(val_data, batch_size=val_batch_size, sh
 
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+lr_scheduler = torch.optim.ExponentialLR(optimizer, gamma=0.9, verbose=True)
+
 scaler = torch.cuda.amp.GradScaler() #for fp16
 
 best_val_accuracy = 0
@@ -353,6 +355,8 @@ for epoch in range(num_epochs):
             r = torch.cuda.memory_reserved(device)
             a = torch.cuda.memory_allocated(device)
             print(f"* memory reserved: {r/float(1000000):.0f} MB, memory allocated: {a/float(1000000):.0f} MB, free memory: {(t-r)/float(1000000):.0f}")
+
+    lr_scheduler.step() #multiply learning rate by 0.9 after every epoch
 
     #######################
     ### VALIDATION LOOP ###
