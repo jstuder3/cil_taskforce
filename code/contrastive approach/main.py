@@ -23,14 +23,14 @@ def read_text_data(infile):
 ###################################
 ########Hyperparameters############
 ###################################
-num_epochs = 1
+num_epochs = 20
 temperature = 0.07
-learning_rate = 1e-5
+learning_rate = 1e-6
 train_size=0.7
 train_batch_size=64
-val_batch_size=256
-max_queue_size=8192 #putting this to zero disables the momentum encoder queue
-momentum_update_weight=0.999
+val_batch_size=128
+max_queue_size=0 #putting this to zero disables the momentum encoder queue
+momentum_update_weight=0.99
 max_collection_size = 0 # putting this and num_hard_..._per_sample to zero disables hard negatives
 num_hard_negatives_per_sample=0
 num_hard_positives_per_sample=0
@@ -94,7 +94,7 @@ val_loader = torch.utils.data.DataLoader(val_data, batch_size=val_batch_size, sh
 
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-lr_scheduler = torch.optim.ExponentialLR(optimizer, gamma=0.9, verbose=True)
+lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9, verbose=True)
 
 scaler = torch.cuda.amp.GradScaler() #for fp16
 
