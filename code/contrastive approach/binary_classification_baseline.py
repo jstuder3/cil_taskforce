@@ -46,10 +46,10 @@ num_epochs = 20
 temperature = 0.07
 learning_rate = 1e-5
 train_size=0.7
-train_batch_size=64
+train_batch_size=16
 val_batch_size=256
 early_stopping_threshold=3
-debug_subsampling = 1
+debug_subsampling = 0.01
 ##################################
 
 writer = SummaryWriter()
@@ -87,7 +87,9 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 scaler = torch.cuda.amp.GradScaler() #for fp16
 
-best_val_accuracy = 0
+lowest_val_loss = float("inf")
+val_accuracy_of_best_model = 0
+
 num_epochs_no_improvement = 0
 
 for epoch in range(num_epochs):
@@ -129,6 +131,7 @@ for epoch in range(num_epochs):
         #compute accuracy on validation set
         correct_counter = 0
         total_counter = 0
+        loss_sum = 0
         for iteration, batch in enumerate(val_loader):
             inputs, labels = batch
             tokens = inputs["input_ids"].to(device)
@@ -138,6 +141,10 @@ for epoch in range(num_epochs):
             logits = model(input_ids=tokens, attention_mask=attention_masks).reshape(-1)
 
             predictions = torch.nn.Sigmoid()(logits)
+
+            loss = torch.nn.BCEWithLogitsLoss()(logits, labels)
+
+            loss_sum += loss.item()
 
             correct_counter += torch.sum(torch.round(predictions)==labels).item()
             total_counter += tokens.shape[0]
@@ -149,20 +156,21 @@ for epoch in range(num_epochs):
         print(f"Validation accuracy: {val_accuracy:.3f}%")
         writer.add_scalar("Baseline_Validation/accuracy", val_accuracy, epoch)
 
-        if (val_accuracy > best_val_accuracy):
+        if (loss_sum < lowest_val_loss): #do early stopping based on the validation loss
             num_epochs_no_improvement = 0
-            best_val_accuracy=val_accuracy
-            print(f"Found new best model at {best_val_accuracy:3f}% validation accuracy. Saving model...")
+            lowest_val_loss = loss_sum
+            val_accuracy_of_best_model = val_accuracy
+            print(f"Found new best model with {lowest_val_loss:.6f} validation loss ({val_accuracy_of_best_model:.3f}% validation accuracy). Saving model...")
             torch.save(model.state_dict(), "best_model_parameters.pt")
         else:
             num_epochs_no_improvement += 1
 
-        if num_epochs_no_improvement>=early_stopping_threshold:
+        if num_epochs_no_improvement>=early_stopping_threshold: #if we have not improved for early_stopping_threshold epochs, stop the training
             break
 
 print(f"###### Finished training ######")
 
-print(f"Loading the  best checkpoint which had {best_val_accuracy:.3f}% validation accuracy...")
+print(f"Loading the  best checkpoint which had {lowest_val_loss:.6f} validatoin loss and {val_accuracy_of_best_model:.3f}% validation accuracy...")
 model.load_state_dict(torch.load("best_model_parameters.pt"))
 
 ####### TESTING #######

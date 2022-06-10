@@ -23,11 +23,11 @@ def read_text_data(infile):
 ###################################
 ########Hyperparameters############
 ###################################
-num_epochs = 20
+num_epochs = 1
 temperature = 0.07
 learning_rate = 1e-6
 train_size=0.7
-train_batch_size=64
+train_batch_size=16
 val_batch_size=128
 max_queue_size=0 #putting this to zero disables the momentum encoder queue
 momentum_update_weight=0.99
@@ -35,7 +35,7 @@ max_collection_size = 0 # putting this and num_hard_..._per_sample to zero disab
 num_hard_negatives_per_sample=0
 num_hard_positives_per_sample=0
 early_stopping_threshold=3
-debug_subsampling = 1
+debug_subsampling = 0.01
 ###################################
 ###################################
 ###################################
@@ -98,7 +98,8 @@ lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9, verb
 
 scaler = torch.cuda.amp.GradScaler() #for fp16
 
-best_val_accuracy = 0
+lowest_val_loss = float("inf")
+val_accuracy_of_best_model = 0
 
 num_epochs_not_improved = 0
 
@@ -387,6 +388,7 @@ for epoch in range(num_epochs):
         #second: predict labels based on the average proximity to elements in the training set classes; then compute accuracy using validation labels
         correct_counter = 0
         total_counter = 0
+        loss_sum = 0
         for iteration, batch in enumerate(val_loader):
             inputs, labels = batch
             tokens = inputs["input_ids"].to(device)
@@ -409,6 +411,17 @@ for epoch in range(num_epochs):
 
             predictions = (average_positive_distance > average_negative_distance).int()
 
+            cross_entropy_labels = torch.zeros((val_batch_size, train_embeddings_matrix.shape[0]), dtype=torch.float32).to(device)
+            for i in range(train_batch_size):
+                if labels[i] == 1:
+                    cross_entropy_labels[i] = positive_indices.int()
+                else:
+                    cross_entropy_labels[i] = negative_indices.int()
+
+            loss = torch.nn.CrossEntropyLoss()(similarity_matrix/temperature, cross_entropy_labels)
+
+            loss_sum+=loss.item()
+
             correct_counter += torch.sum(predictions==labels).item()
             total_counter += tokens.shape[0]
             if iteration%25==0:
@@ -416,13 +429,15 @@ for epoch in range(num_epochs):
 
         val_accuracy = 100*correct_counter/float(total_counter)
 
-        print(f"Validation accuracy: {val_accuracy:.3f}%")
+        print(f"Validation accuracy: {val_accuracy:.3f}%; Validation loss: {loss_sum:.3f}")
         writer.add_scalar("Validation/accuracy", 100*correct_counter/float(total_counter), epoch)
+        writer.add_scalar("Validation/loss", loss_sum, epoch)
 
-        if (val_accuracy > best_val_accuracy):
+        if (loss_sum < lowest_val_loss): #do early stopping based on the validation loss
             num_epochs_not_improved = 0
-            best_val_accuracy=val_accuracy
-            print(f"Found new best model at {best_val_accuracy:3f}% validation accuracy. Saving model...")
+            lowest_val_loss = loss_sum
+            val_accuracy_of_best_model = val_accuracy
+            print(f"Found new best model with {lowest_val_loss:.6f} validation loss ({val_accuracy_of_best_model:.3f}% validation accuracy). Saving model...")
             torch.save(model.state_dict(), "best_model_parameters.pt")
         else:
             num_epochs_not_improved += 1
@@ -433,7 +448,7 @@ for epoch in range(num_epochs):
 
 print(f"###### Finished training ######")
 
-print(f"Loading the  best checkpoint which had {best_val_accuracy:.3f}% validation accuracy...")
+print(f"Loading the  best checkpoint which had {lowest_val_loss:.6f} validatoin loss and {val_accuracy_of_best_model:.3f}% validation accuracy...")
 model.load_state_dict(torch.load("best_model_parameters.pt"))
 
 ###############
