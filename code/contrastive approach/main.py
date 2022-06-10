@@ -449,7 +449,7 @@ for epoch in range(num_epochs):
 
 print(f"###### Finished training ######")
 
-print(f"Loading the  best checkpoint which had {lowest_val_loss:.6f} validatoin loss and {val_accuracy_of_best_model:.3f}% validation accuracy...")
+print(f"Loading the  best checkpoint which had {lowest_val_loss:.6f} validation loss and {val_accuracy_of_best_model:.3f}% validation accuracy...")
 model.load_state_dict(torch.load("best_model_parameters.pt"))
 
 ###############
