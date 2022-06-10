@@ -42,14 +42,14 @@ def read_text_data(infile):
 
 
 ########Hyperparameters############
-num_epochs = 1
+num_epochs = 30
 temperature = 0.07
 learning_rate = 1e-5
 train_size=0.7
-train_batch_size=16
+train_batch_size=64
 val_batch_size=256
 early_stopping_threshold=3
-debug_subsampling = 0.01
+debug_subsampling = 1
 ##################################
 
 writer = SummaryWriter(filename_suffix=f"-binary_cls-bs_{train_batch_size}-lr_{learning_rate}-debug_{debug_subsampling}")
