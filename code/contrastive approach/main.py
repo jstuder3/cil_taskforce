@@ -40,7 +40,8 @@ debug_subsampling = 0.01
 ###################################
 ###################################
 
-writer = SummaryWriter()
+writer = SummaryWriter(filename_suffix=f"-contrastive_approach-bs_{train_batch_size}-lr_{learning_rate}-qs_{max_queue_size}-updtwght_{momentum_update_weight}-cs_{max_collection_size}-hs_{num_hard_negatives_per_sample}-debug_{debug_subsampling}")
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 model_name = "bert-base-uncased"

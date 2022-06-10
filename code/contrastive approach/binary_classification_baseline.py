@@ -42,7 +42,7 @@ def read_text_data(infile):
 
 
 ########Hyperparameters############
-num_epochs = 20
+num_epochs = 1
 temperature = 0.07
 learning_rate = 1e-5
 train_size=0.7
@@ -52,7 +52,7 @@ early_stopping_threshold=3
 debug_subsampling = 0.01
 ##################################
 
-writer = SummaryWriter()
+writer = SummaryWriter(filename_suffix=f"-binary_cls-bs_{train_batch_size}-lr_{learning_rate}-debug_{debug_subsampling}")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 model_name = "bert-base-uncased"
