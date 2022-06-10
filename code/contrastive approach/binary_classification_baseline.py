@@ -153,9 +153,9 @@ for epoch in range(num_epochs):
 
         val_accuracy = 100*correct_counter/float(total_counter)
 
-        print(f"Validation accuracy: {val_accuracy:.3f}%; Validation loss: {loss_sum:.3f}")
-        writer.add_scalar("Validation/accuracy", 100*correct_counter/float(total_counter), epoch)
-        writer.add_scalar("Validation/loss", loss_sum, epoch)
+        print(f"Baseline_Validation accuracy: {val_accuracy:.3f}%; Validation loss: {loss_sum:.3f}")
+        writer.add_scalar("Baseline_Validation/accuracy", 100*correct_counter/float(total_counter), epoch)
+        writer.add_scalar("Baseline_Validation/loss", loss_sum, epoch)
 
         if (loss_sum < lowest_val_loss): #do early stopping based on the validation loss
             num_epochs_no_improvement = 0
