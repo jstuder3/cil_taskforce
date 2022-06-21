@@ -195,8 +195,8 @@ for epoch in range(num_epochs):
                 hard_negative_cross_entropy_labels = torch.empty((train_batch_size, hard_negative_embeddings.shape[0])).to(device) #note that hard_negative_embeddings.shape[0] can be different from train_batch_size * num_hard_negatives_per_sample because we call .unique() above
 
                 #the first few hard negatives are of positive sentiment and the last few are of negative sentiment
-                positive_label = torch.tensor([1] * positive_sentiment_hard_negative_indices.shape[0] + [0] * negative_sentiment_hard_negative_indices.shape[0]).to(device)
-                negative_label = torch.tensor([0] * positive_sentiment_hard_negative_indices.shape[0] + [1] * negative_sentiment_hard_negative_indices.shape[0]).to(device)
+                positive_label = torch.tensor([0] * positive_sentiment_hard_negative_indices.shape[0] + [1] * negative_sentiment_hard_negative_indices.shape[0]).to(device)
+                negative_label = torch.tensor([1] * positive_sentiment_hard_negative_indices.shape[0] + [0] * negative_sentiment_hard_negative_indices.shape[0]).to(device)
 
                 #depending on the sentiment of the in-batch samples, insert a different label row
                 for i in range(train_batch_size):
@@ -294,7 +294,7 @@ for epoch in range(num_epochs):
                 num_positive_sentiment_samples = len(positive_sentiment_indices)
                 num_negative_sentiment_samples = len(negative_sentiment_indices)
 
-                #append the positive sentiment samples to the positive sentimenet collection
+                #append the positive sentiment samples to the positive sentiment collection
                 if positive_sentiment_collection.shape[0] < max_collection_size: #if the collection isn't already full, just append the new embeddings to the end of it
 
                     remaining_length = max_collection_size - positive_sentiment_collection.shape[0]
