@@ -158,37 +158,37 @@ def get_best_model(all_models,features,labels,cv_splits,mode,metric):
     best_model_score = 0
     if mode == "avg":
         if metric == "accuracy":
-            best_model = int(np.argmax(best_avg_metric[0::3])/3)
+            best_model = int(np.argmax(best_avg_metric[0::3]))
             best_model_score = np.max(best_avg_metric[0::3])
         elif metric == "precision":
-            best_model = int(np.argmax(best_avg_metric[1::3])/3)
+            best_model = int(np.argmax(best_avg_metric[1::3]))
             best_model_score = np.max(best_avg_metric[1::3])
         elif metric == "recall":
-            best_model = int(np.argmax(best_avg_metric[2::3])/3)
+            best_model = int(np.argmax(best_avg_metric[2::3]))
             best_model_score = np.max(best_avg_metric[2::3])
         else:
             print("Unknown metric! Using average accuracy to determine best model.")
-            best_model = int(np.argmax(best_avg_metric[0::3])/3)
+            best_model = int(np.argmax(best_avg_metric[0::3]))
             best_model_score = np.max(best_avg_metric[1::3])
 
     elif mode == "max":
         if metric == "accuracy":
-            best_model = int(np.argmax(best_max_metric[0::3])/3)
+            best_model = int(np.argmax(best_max_metric[0::3]))
             best_model_score = np.max(best_max_metric[0::3])
         elif metric == "precision":
-            best_model = int(np.argmax(best_max_metric[1::3])/3)
+            best_model = int(np.argmax(best_max_metric[1::3]))
             best_model_score = np.max(best_max_metric[1::3])
         elif metric == "recall":
-            best_model = int(np.argmax(best_max_metric[2::3])/3)
+            best_model = int(np.argmax(best_max_metric[2::3]))
             best_model_score = np.max(best_max_metric[2::3])
         else:
             print("Unknown metric! Using max accuracy to determine best model.")
-            best_model = int(np.argmax(best_max_metric[0::3])/3)
+            best_model = int(np.argmax(best_max_metric[0::3]))
             best_model_score = np.max(best_max_metric[0::3])
     
     else:
         print("Unknown mode! Using average accuracy to determine best model.")
-        best_model = int(np.argmax(best_avg_metric[0::3])/3)
+        best_model = int(np.argmax(best_avg_metric[0::3]))
     
     best_model_name = list(all_models.keys())[best_model]
     print("Best model ({0} {1}): {2} ({3:.2%})".format(eval_mode, eval_metric, best_model_name,best_model_score))
