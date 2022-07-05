@@ -23,19 +23,19 @@ def read_text_data(infile):
 ###################################
 ########Hyperparameters############
 ###################################
-num_epochs = 30
+num_epochs = 1
 temperature = 0.07
 learning_rate = 5e-6
 train_size=0.8
-train_batch_size=64
-val_batch_size=256
+train_batch_size=16
+val_batch_size=32
 max_queue_size=0 #putting this to zero disables the momentum encoder queue
 momentum_update_weight=0.99
 max_collection_size = 0 # putting this and num_hard_..._per_sample to zero disables hard negatives
 num_hard_negatives_per_sample=0
 num_hard_positives_per_sample=0
 early_stopping_threshold=3
-debug_subsampling = 1
+debug_subsampling = 0.005
 ###################################
 ###################################
 ###################################
@@ -62,7 +62,7 @@ class GruBERT(nn.Module):
         # self.bert_model = AutoModel.from_pretrained(self.model_name)
         self.bert_model = BertModel.from_pretrained(self.model_name,output_hidden_states=True)
 
-        self.bert_model = self.bert_model.to(self.device)
+        self.bert_model = self.bert_model
         self.num_grus = params["num_grus"]
         self.num_shared = int(12 / self.num_grus)
         
@@ -90,9 +90,9 @@ class GruBERT(nn.Module):
         embeddings = self.bert_model(input_ids=tokens, attention_mask=attention)
         embeddings = [torch.cat(embeddings[2][i * self.num_shared + 1 : (i+1) * self.num_shared + 1], dim=2) for i in range(self.num_grus)]
 
-        permute_input = [embeddings[i].to(self.device).permute(1,0,2) for i in range(self.num_grus)]
-        out_ws_gru = [self.weight_shared_gru.to(self.device)(permute_input[i])[0] for i in range(self.num_grus)]
-        out_ws_gru = torch.cat(out_ws_gru,2).to(self.device)
+        permute_input = [embeddings[i].permute(1,0,2) for i in range(self.num_grus)]
+        out_ws_gru = [self.weight_shared_gru(permute_input[i])[0] for i in range(self.num_grus)]
+        out_ws_gru = torch.cat(out_ws_gru,2)
 
         out_gru, _ = self.gru(out_ws_gru)
         out_gru = F.relu(out_gru.permute(1,0,2))
@@ -109,7 +109,7 @@ def train_model():
     tokenizer_name = model_params["model"]
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
 
-    model = GruBERT(model_params)
+    model = GruBERT(model_params).to(device)
 
     print(f"Running on {device}")
     # print(f"GPU name: {torch.cuda.get_device_name(device)}")
@@ -166,9 +166,9 @@ def train_model():
             batch_loss = loss_fn(pred_logits.to(device), labels)
             _, pred_classes = pred_logits.max(dim=1)
 
-            train_accuracy = accuracy_score(pred_classes.numpy(), labels.numpy())
-            train_precision = precision_score(pred_classes.numpy(), labels.numpy())
-            train_recall = recall_score(pred_classes.numpy(), labels.numpy())
+            train_accuracy = accuracy_score(pred_classes.cpu().numpy(), labels.cpu().numpy())
+            train_precision = precision_score(pred_classes.cpu().numpy(), labels.cpu().numpy())
+            train_recall = recall_score(pred_classes.cpu().numpy(), labels.cpu().numpy())
 
             batch_loss.backward()
 
@@ -222,8 +222,8 @@ def train_model():
                 total_loss += val_batch_loss.item()
 
                 _, pred_classes = pred_logits.max(dim=1)
-                all_pred_classes = np.concatenate((all_pred_classes, pred_classes.numpy()),axis=0)
-                all_true_classes = np.concatenate((all_true_classes,labels.numpy()),axis=0)
+                all_pred_classes = np.concatenate((all_pred_classes, pred_classes.cpu().numpy()),axis=0)
+                all_true_classes = np.concatenate((all_true_classes,labels.cpu().numpy()),axis=0)
 
                 if iteration%25==0:
                     print(f"* Validation iteration {iteration} \t progress: {iteration/len(val_loader):.2%}")
@@ -257,9 +257,9 @@ def train_model():
     print(f"###### Finished training ######")
 
     print(f"Loading the  best checkpoint which had {lowest_val_loss:.6f} validation loss and {val_accuracy_of_best_model:.2%} validation accuracy...")
-    trained_model = model.load_state_dict(torch.load("best_grubert_params.pt"))
+    model.load_state_dict(torch.load("best_grubert_params.pt"))
 
-    return trained_model
+    return model
 
 def test_model(model):
     device = "cuda" if torch.cuda.is_available() else "cpu"
