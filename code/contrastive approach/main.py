@@ -25,7 +25,7 @@ def read_text_data(infile):
 ###################################
 num_epochs = 30
 temperature = 0.07
-learning_rate = 5e-6
+learning_rate = 1e-5
 train_size=0.7
 train_batch_size=64
 val_batch_size=256
@@ -400,7 +400,7 @@ for epoch in range(num_epochs):
 
             embeddings = F.normalize(embeddings, p=2, dim=1)  # normalize
 
-            similarity_matrix = torch.matmul(embeddings, train_embeddings_matrix.T)
+            similarity_matrix = torch.matmul(embeddings.type(torch.float16), train_embeddings_matrix.T)
 
             #highest_similarity = torch.argmax(similiarity_matrix, dim=1)
 
@@ -492,7 +492,7 @@ with torch.no_grad():
 
         embeddings = F.normalize(embeddings, p=2, dim=1)  # normalize
 
-        similarity_matrix = torch.matmul(embeddings, train_embeddings_matrix.T)
+        similarity_matrix = torch.matmul(embeddings.type(torch.float16), train_embeddings_matrix.T)
 
         #highest_similarity = torch.argmax(similiarity_matrix, dim=1)
 
