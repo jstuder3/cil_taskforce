@@ -368,7 +368,7 @@ for epoch in range(num_epochs):
     with torch.no_grad():
         model.eval()
         #first: generate embeddings of all training samples
-        train_embeddings_matrix = torch.empty((0, 768), dtype=torch.float32).to(device)
+        train_embeddings_matrix = torch.empty((0, 768), dtype=torch.float16).to(device)
         train_labels = torch.empty((0), dtype=int).to(device)
         for iteration, batch in enumerate(larger_batch_size_train_loader):
             inputs, labels = batch
@@ -380,7 +380,7 @@ for epoch in range(num_epochs):
 
             embeddings = F.normalize(embeddings, p=2, dim=1)  # normalize
 
-            train_embeddings_matrix = torch.vstack((train_embeddings_matrix, embeddings))
+            train_embeddings_matrix = torch.vstack((train_embeddings_matrix, embeddings.type(torch.float16)))
             train_labels = torch.cat((train_labels, labels), dim=0)
 
             if iteration%25==0:
@@ -463,7 +463,7 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=10, shuffle=F
 with torch.no_grad():
     model.eval()
     #first: generate embeddings of all training samples
-    train_embeddings_matrix = torch.empty((0, 768), dtype=torch.float32).to(device)
+    train_embeddings_matrix = torch.empty((0, 768), dtype=torch.float16).to(device)
     train_labels = torch.empty((0), dtype=int).to(device)
     for iteration, batch in enumerate(larger_batch_size_train_loader):
         inputs, labels = batch
@@ -475,7 +475,7 @@ with torch.no_grad():
 
         embeddings = F.normalize(embeddings, p=2, dim=1)  # normalize
 
-        train_embeddings_matrix = torch.vstack((train_embeddings_matrix, embeddings))
+        train_embeddings_matrix = torch.vstack((train_embeddings_matrix, embeddings.type(torch.float16)))
         train_labels = torch.cat((train_labels, labels), dim=0)
 
         if iteration%25==0:
