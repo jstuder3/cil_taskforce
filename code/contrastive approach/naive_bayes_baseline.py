@@ -10,7 +10,6 @@ from sklearn.naive_bayes import BernoulliNB, GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import confusion_matrix, classification_report, precision_score, recall_score
-from sqlalchemy import false
 from dataset import remove_multi_spaces, replace_usr_and_url
 import nltk
 # nltk.download('stopwords')
@@ -93,7 +92,7 @@ def preprocessing(data, use_stop, use_stem, use_lemma):
 def evaluate(model_name, model, train_features, train_labels, test_features, test_labels, out_results=True):
     if model_name == "GaussianNB":
         model.fit(train_features.todense(), train_labels)
-        test_features = test_features.to_dense()
+        test_features = test_features.todense()
     else:
         model.fit(train_features, train_labels)
 
@@ -267,4 +266,4 @@ if __name__ == "__main__":
         # print(feature_extractor.get_feature_names())
 
         model = all_models[eval_model]
-        evaluate(model, train_features, train_labels, val_features, val_labels)
+        evaluate(eval_model, model, train_features, train_labels, val_features, val_labels)
