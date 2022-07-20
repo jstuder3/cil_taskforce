@@ -39,8 +39,8 @@ print(f"Device properties: {torch.cuda.get_device_properties(device)}")
 pos_data = read_text_data("../../twitter-datasets/train_pos.txt")
 neg_data = read_text_data("../../twitter-datasets/train_neg.txt")
 
-pos_data_train, _ = train_test_split(pos_data[0:int(len(pos_data))], train_size=0.005)
-neg_data_train, _ = train_test_split(neg_data[0:int(len(neg_data))], train_size=0.005)
+pos_data_train, _ = train_test_split(pos_data[0:int(len(pos_data))], train_size=0.05)
+neg_data_train, _ = train_test_split(neg_data[0:int(len(neg_data))], train_size=0.05)
 
 full_train_dataset = pos_data_train + neg_data_train
 train_labels = [1] * len(pos_data_train) + [0] * len(neg_data_train)
@@ -54,6 +54,8 @@ train_loader = torch.utils.data.DataLoader(train_data, batch_size=64, shuffle=Tr
 
 untrained_embeddings_matrix = torch.empty((0, 768), dtype=torch.float32).to(device)
 untrained_labels = []
+
+print("* Forwarding samples through untrained encoder...")
 
 with torch.no_grad():
     for iteration, batch in enumerate(train_loader):
@@ -79,6 +81,8 @@ model.load_state_dict(torch.load("best_model_parameters.pt"))
 
 trained_embeddings_matrix = torch.empty((0, 768), dtype=torch.float32).to(device)
 trained_labels = []
+
+print("* Forwarding samples through trained encoder...")
 
 with torch.no_grad():
     for iteration, batch in enumerate(train_loader):
@@ -106,7 +110,9 @@ tsne = TSNE(n_components=2, verbose=1, perplexity=30, n_iter=500)
 untrained_downprojection = tsne.fit_transform(untrained_pca_projection)
 trained_downprojection = tsne.fit_transform(trained_pca_projection)
 
-markersize=20
+markersize=50
+fontsize=30
+max_num_samples=1000
 
 plt.subplot(1, 2, 1)
 
@@ -114,12 +120,12 @@ ax = plt.gca()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 
-plt.gca().set_title("Pre-training embeddings", fontsize=25)
+plt.gca().set_title("Pre-training embeddings", fontsize=fontsize)
 
 #plt.scatter(untrained_downprojection[:, 0], untrained_downprojection[:, 1], color="red")
 
-plt.scatter(untrained_downprojection[untrained_labels==0][:, 0], untrained_downprojection[untrained_labels==0][:, 1], color="indianred", s=markersize, marker="x")
-plt.scatter(untrained_downprojection[untrained_labels==1][:, 0], untrained_downprojection[untrained_labels==1][:, 1], color="limegreen", s=markersize, marker="o")
+plt.scatter(untrained_downprojection[untrained_labels==0][:, 0][:max_num_samples], untrained_downprojection[untrained_labels==0][:, 1][:max_num_samples], color="indianred", s=markersize, marker="x", zorder=2)
+plt.scatter(untrained_downprojection[untrained_labels==1][:, 0][:max_num_samples], untrained_downprojection[untrained_labels==1][:, 1][:max_num_samples], color="limegreen", s=markersize, marker="o", zorder=1)
 
 plt.subplot(1, 2, 2)
 
@@ -127,9 +133,9 @@ ax = plt.gca()
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 
-plt.gca().set_title("Post-training embeddings", fontsize=25)
+plt.gca().set_title("Post-training embeddings", fontsize=fontsize)
 
-plt.scatter(trained_downprojection[trained_labels==0][:, 0], trained_downprojection[trained_labels==0][:, 1], color="indianred", s=markersize, marker="x")
-plt.scatter(trained_downprojection[trained_labels==1][:, 0], trained_downprojection[trained_labels==1][:, 1], color="limegreen", s=markersize, marker="o")
+plt.scatter(trained_downprojection[trained_labels==0][:, 0][:max_num_samples], trained_downprojection[trained_labels==0][:, 1][:max_num_samples], color="indianred", s=markersize, marker="x", zorder=2)
+plt.scatter(trained_downprojection[trained_labels==1][:, 0][:max_num_samples], trained_downprojection[trained_labels==1][:, 1][:max_num_samples], color="limegreen", s=markersize, marker="o", zorder=1)
 
 plt.show()
