@@ -8,6 +8,13 @@ The paper can be found [here](https://github.com/jstuder3/cil_taskforce/blob/mai
 
 Contrastive Learning provides a framework for comparing many data types with each other. We propose to use it for Sentiment Classification of informal text snippets and find that it performs on-par with methods that rely on the same base model, with the potential to outperform them when using larger datasets. We also explore the viability of hard sample mining in this context and find that it does not offer any benefits.
 
+The following figure shows the basic idea of the MoCo framework which we used for this project:
+
+<p align="center">
+  <img src="https://github.com/jstuder3/cil_taskforce/assets/87820315/a6980a29-87cd-485a-af02-6e441a7fcd99" />
+</p>
+
+
 # Frequently Asked Questions
 
 ### Q: Where can I find the code?
